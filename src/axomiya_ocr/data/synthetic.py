@@ -11,6 +11,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, features
 
 from .text import normalize_label, validate_assamese_label
+from .vocab import Vocabulary
 
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[।!?])\s+|\n+")
 
@@ -149,6 +150,7 @@ def render_synthetic_dataset(
     samples: int,
     seed: int = 1337,
     overwrite: bool = False,
+    vocab_path: str | Path | None = None,
 ) -> None:
     from datasets import Dataset, DatasetDict, Features, Value
     from datasets import Image as HFImage
@@ -165,6 +167,18 @@ def render_synthetic_dataset(
         shutil.rmtree(resolved)
     records = [json.loads(line) for line in corpus_path.read_text(encoding="utf-8").splitlines()]
     train_records = [record for record in records if record["split"] == "train"]
+    vocabulary: Vocabulary | None = None
+    rejected_for_vocabulary = 0
+    if vocab_path is not None:
+        vocabulary = Vocabulary.load(vocab_path)
+        allowed_characters = set(vocabulary.characters)
+        compatible_records = [
+            record
+            for record in train_records
+            if set(normalize_label(record["text"])).issubset(allowed_characters)
+        ]
+        rejected_for_vocabulary = len(train_records) - len(compatible_records)
+        train_records = compatible_records
     fonts = sorted([*fonts_dir.glob("*.ttf"), *fonts_dir.glob("*.otf")])
     if not train_records:
         raise ValueError("No Assamese training lines found in the corpus")
@@ -209,6 +223,8 @@ def render_synthetic_dataset(
                 "source_config": "20231101.as",
                 "samples": samples,
                 "seed": seed,
+                "vocabulary_sha256": vocabulary.sha256 if vocabulary else None,
+                "vocabulary_rejected_corpus_lines": rejected_for_vocabulary,
                 "corpus_sha256": corpus_hash,
                 "font_sha256": font_hashes,
             },
