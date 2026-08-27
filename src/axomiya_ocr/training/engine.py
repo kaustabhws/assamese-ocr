@@ -247,7 +247,9 @@ def train(config: dict[str, Any], resume_from: str | Path | None = None) -> dict
             np.random.set_state(rng_state["numpy"])
             torch.set_rng_state(rng_state["torch"].cpu())
             if torch.cuda.is_available() and rng_state.get("cuda"):
-                torch.cuda.set_rng_state_all(rng_state["cuda"])
+                torch.cuda.set_rng_state_all(
+                    [state.cpu() for state in rng_state["cuda"]]
+                )
         history_path = output_dir / "history.json"
         if history_path.exists():
             history = json.loads(history_path.read_text(encoding="utf-8"))
