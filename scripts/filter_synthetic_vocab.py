@@ -6,7 +6,7 @@ import json
 import shutil
 from pathlib import Path
 
-from axomiya_ocr.data.text import normalize_label
+from axomiya_ocr.data.text import ctc_required_steps, normalize_label
 from axomiya_ocr.data.vocab import Vocabulary
 
 
@@ -19,6 +19,8 @@ def main() -> None:
     parser.add_argument("--dataset", default="data/processed/synthetic_assamese")
     parser.add_argument("--vocab", default="data/processed/mozhi_assamese/vocab.json")
     parser.add_argument("--num-proc", type=int, default=4)
+    parser.add_argument("--max-width", type=int, default=768)
+    parser.add_argument("--ctc-stride", type=int, default=4)
     parser.add_argument("--promote-existing", action="store_true")
     args = parser.parse_args()
 
@@ -30,12 +32,15 @@ def main() -> None:
     vocabulary = Vocabulary.load(args.vocab)
     allowed = set(vocabulary.characters)
 
+    def is_compatible(text: str) -> bool:
+        normalized = normalize_label(text)
+        return set(normalized).issubset(allowed) and (
+            ctc_required_steps(normalized) * args.ctc_stride <= args.max_width
+        )
+
     if args.promote_existing:
         repaired = load_from_disk(str(temporary_path))
-        invalid_count = sum(
-            not set(normalize_label(text)).issubset(allowed)
-            for text in repaired["train"]["text"]
-        )
+        invalid_count = sum(not is_compatible(text) for text in repaired["train"]["text"])
         if invalid_count:
             raise ValueError(f"Filtered dataset still contains {invalid_count} invalid labels")
         kept_count = len(repaired["train"])
@@ -51,9 +56,15 @@ def main() -> None:
 
     dataset = load_from_disk(str(dataset_path))
     original_count = len(dataset["train"])
-
-    def is_compatible(text: str) -> bool:
-        return set(normalize_label(text)).issubset(allowed)
+    texts = dataset["train"]["text"]
+    vocabulary_rejected = sum(
+        not set(normalize_label(text)).issubset(allowed) for text in texts
+    )
+    ctc_rejected = sum(
+        set(normalize_label(text)).issubset(allowed)
+        and ctc_required_steps(text) * args.ctc_stride > args.max_width
+        for text in texts
+    )
 
     filtered_train = dataset["train"].filter(
         is_compatible,
@@ -69,7 +80,14 @@ def main() -> None:
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     metadata["samples"] = kept_count
     metadata["vocabulary_sha256"] = vocabulary.sha256
-    metadata["vocabulary_rejected_samples"] = original_count - kept_count
+    metadata["vocabulary_rejected_samples"] = (
+        int(metadata.get("vocabulary_rejected_samples", 0)) + vocabulary_rejected
+    )
+    metadata["ctc_rejected_samples"] = (
+        int(metadata.get("ctc_rejected_samples", 0)) + ctc_rejected
+    )
+    metadata["max_ctc_width"] = args.max_width
+    metadata["ctc_stride"] = args.ctc_stride
     (temporary_path / "generation.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -84,6 +102,8 @@ def main() -> None:
                 "original_samples": original_count,
                 "kept_samples": kept_count,
                 "removed_samples": original_count - kept_count,
+                "vocabulary_rejected_samples": vocabulary_rejected,
+                "ctc_rejected_samples": ctc_rejected,
                 "vocabulary_sha256": vocabulary.sha256,
             },
             indent=2,

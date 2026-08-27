@@ -11,6 +11,7 @@ def main() -> None:
     parser.add_argument("--fonts", default="assets/fonts")
     parser.add_argument("--output", default="data/processed/synthetic_assamese")
     parser.add_argument("--vocab", default="data/processed/mozhi_assamese/vocab.json")
+    parser.add_argument("--max-width", type=int, default=768)
     parser.add_argument("--samples", type=int, default=250_000)
     parser.add_argument("--seed", type=int, default=1337)
     parser.add_argument("--overwrite", action="store_true")
@@ -23,6 +24,7 @@ def main() -> None:
         args.seed,
         overwrite=args.overwrite,
         vocab_path=args.vocab,
+        max_ctc_width=args.max_width,
     )
     print(f"Saved {args.samples} Assamese synthetic lines to {args.output}")
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, features
 
-from .text import normalize_label, validate_assamese_label
+from .text import ctc_required_steps, normalize_label, validate_assamese_label
 from .vocab import Vocabulary
 
 _SENTENCE_BOUNDARY = re.compile(r"(?<=[।!?])\s+|\n+")
@@ -151,6 +151,8 @@ def render_synthetic_dataset(
     seed: int = 1337,
     overwrite: bool = False,
     vocab_path: str | Path | None = None,
+    max_ctc_width: int = 768,
+    ctc_stride: int = 4,
 ) -> None:
     from datasets import Dataset, DatasetDict, Features, Value
     from datasets import Image as HFImage
@@ -169,16 +171,25 @@ def render_synthetic_dataset(
     train_records = [record for record in records if record["split"] == "train"]
     vocabulary: Vocabulary | None = None
     rejected_for_vocabulary = 0
+    rejected_for_ctc = 0
     if vocab_path is not None:
         vocabulary = Vocabulary.load(vocab_path)
         allowed_characters = set(vocabulary.characters)
-        compatible_records = [
-            record
-            for record in train_records
-            if set(normalize_label(record["text"])).issubset(allowed_characters)
-        ]
-        rejected_for_vocabulary = len(train_records) - len(compatible_records)
-        train_records = compatible_records
+        vocabulary_records = []
+        for record in train_records:
+            text = normalize_label(record["text"])
+            if set(text).issubset(allowed_characters):
+                vocabulary_records.append(record)
+            else:
+                rejected_for_vocabulary += 1
+        train_records = vocabulary_records
+    ctc_records = []
+    for record in train_records:
+        if ctc_required_steps(record["text"]) * ctc_stride <= max_ctc_width:
+            ctc_records.append(record)
+        else:
+            rejected_for_ctc += 1
+    train_records = ctc_records
     fonts = sorted([*fonts_dir.glob("*.ttf"), *fonts_dir.glob("*.otf")])
     if not train_records:
         raise ValueError("No Assamese training lines found in the corpus")
@@ -225,6 +236,9 @@ def render_synthetic_dataset(
                 "seed": seed,
                 "vocabulary_sha256": vocabulary.sha256 if vocabulary else None,
                 "vocabulary_rejected_corpus_lines": rejected_for_vocabulary,
+                "ctc_rejected_corpus_lines": rejected_for_ctc,
+                "max_ctc_width": max_ctc_width,
+                "ctc_stride": ctc_stride,
                 "corpus_sha256": corpus_hash,
                 "font_sha256": font_hashes,
             },
