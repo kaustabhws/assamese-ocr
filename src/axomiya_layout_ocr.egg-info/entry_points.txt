@@ -1,0 +1,2 @@
+[console_scripts]
+axomiya-ocr = axomiya_ocr.cli:main

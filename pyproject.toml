@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "axomiya-layout-ocr"
+version = "0.1.0"
+description = "Assamese-first, layout-preserving OCR training and inference toolkit"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Axomiya Layout OCR contributors" }]
+dependencies = [
+  "numpy>=1.26,<3",
+  "Pillow>=10,<13",
+  "PyYAML>=6,<7",
+]
+
+[project.optional-dependencies]
+train = [
+  "torch>=2.3,<3",
+  "torchvision>=0.18,<1",
+  "datasets>=3,<6",
+  "huggingface-hub>=0.25,<2",
+  "fonttools>=4.55,<5",
+  "onnx>=1.17,<2",
+  "onnxscript>=0.2,<1",
+  "tensorboard>=2.17,<3",
+  "tqdm>=4.66,<5",
+]
+inference = [
+  "onnxruntime>=1.18,<2",
+  "PyMuPDF>=1.24,<2",
+  "rapidocr>=3.4,<4",
+  "huggingface-hub>=0.25,<2",
+]
+notebooks = [
+  "jupyterlab>=4.2,<5",
+  "ipykernel>=6.29,<8",
+  "matplotlib>=3.9,<4",
+  "pandas>=2.2,<4",
+]
+dev = [
+  "pytest>=8.3,<9",
+  "ruff>=0.8,<1",
+  "mypy>=1.13,<2",
+  "nbformat>=5.10,<6",
+  "types-PyYAML>=6.0,<7",
+]
+
+[project.scripts]
+axomiya-ocr = "axomiya_ocr.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+disallow_untyped_defs = true
+ignore_missing_imports = true

@@ -1,0 +1,34 @@
+seed: 1337
+data:
+  dataset_path: data/processed/mozhi_assamese_smoke
+  synthetic_path: data/processed/synthetic_assamese
+  vocab_path: data/processed/mozhi_assamese_smoke/vocab.json
+  image_height: 48
+  max_image_width: 256
+  min_image_width: 32
+  synthetic_weight: 0.0
+  num_workers: 0
+model:
+  input_channels: 1
+  cnn_channels: 96
+  rnn_hidden: 32
+  rnn_layers: 1
+  dropout: 0.1
+training:
+  epochs: 1
+  batch_size: 8
+  learning_rate: 0.0005
+  weight_decay: 0.0001
+  grad_clip: 5.0
+  amp: false
+  patience: 1
+  log_every: 1
+  output_dir: artifacts/smoke_recognizer
+evaluation:
+  decode: greedy
+  primary_metric: cer
+  max_cer: 1.0
+export:
+  opset: 18
+  dynamic_width: true
+  quantize_int8: false

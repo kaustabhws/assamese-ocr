@@ -1,0 +1,33 @@
+{
+  "note": "Font names refer to the shared script; generated language content is Assamese only.",
+  "fonts": {
+    "NotoSansBengali.ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali%5Bwdth%2Cwght%5D.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://openfontlicense.org/",
+      "bytes": 463668,
+      "sha256": "dcd42978094e584a849c84a51450eeac40c8826057d566ea6d4b9627a403a05a"
+    },
+    "NotoSerifBengali.ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/notoserifbengali/NotoSerifBengali%5Bwdth%2Cwght%5D.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://openfontlicense.org/",
+      "bytes": 981812,
+      "sha256": "083180a7b47cf3b101ed55a8724aa1b38869daa9baf23b7cf198f9d225365aba"
+    },
+    "AnekBangla.ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/anekbangla/AnekBangla%5Bwdth%2Cwght%5D.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://openfontlicense.org/",
+      "bytes": 1344456,
+      "sha256": "8b4ec2eaf7400ea9903718a4addf3135475292e6e0b04db7735d0f999289d919"
+    },
+    "BalooDa2.ttf": {
+      "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/balooda2/BalooDa2%5Bwght%5D.ttf",
+      "license": "OFL-1.1",
+      "license_url": "https://openfontlicense.org/",
+      "bytes": 451504,
+      "sha256": "8b62a8c4dbe659be5e4d40c19b7b3012120335b333205c5aa101b45cdb449cff"
+    }
+  }
+}

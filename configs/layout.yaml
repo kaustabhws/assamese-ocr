@@ -1,0 +1,33 @@
+balanced:
+  repo_id: stefanj0/docling-layout-heron-int8-onnx
+  filename: docling-layout-heron-int8.onnx
+  revision: dc6c61cf80f3771f3224c59e85b921310802682f
+  input_size: 640
+  score_threshold: 0.35
+  model_license: Apache-2.0
+mobile_training:
+  architecture: ssdlite320_mobilenet_v3_large
+  dataset: docling-project/DocLayNet
+  image_size: 320
+  epochs: 25
+  batch_size: 32
+  learning_rate: 0.0002
+  output_dir: artifacts/layout_mobile
+labels:
+  - caption
+  - footnote
+  - formula
+  - list_item
+  - page_footer
+  - page_header
+  - picture
+  - section_header
+  - table
+  - text
+  - title
+  - document_index
+  - code
+  - checkbox_selected
+  - checkbox_unselected
+  - form
+  - key_value_region

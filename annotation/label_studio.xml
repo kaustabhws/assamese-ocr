@@ -1,0 +1,23 @@
+<View>
+  <Image name="page" value="$image" zoom="true"/>
+  <RectangleLabels name="region" toName="page">
+    <Label value="title" background="#E76F51"/>
+    <Label value="section_header" background="#F4A261"/>
+    <Label value="text" background="#2A9D8F"/>
+    <Label value="list_item" background="#43AA8B"/>
+    <Label value="table" background="#457B9D"/>
+    <Label value="picture" background="#6D597A"/>
+    <Label value="caption" background="#B56576"/>
+    <Label value="formula" background="#8338EC"/>
+    <Label value="page_header" background="#90BE6D"/>
+    <Label value="page_footer" background="#577590"/>
+    <Label value="footnote" background="#F9C74F"/>
+    <Label value="form" background="#277DA1"/>
+    <Label value="key_value_region" background="#4D908E"/>
+  </RectangleLabels>
+  <PolygonLabels name="line" toName="page">
+    <Label value="text_line" background="#00B4D8"/>
+  </PolygonLabels>
+  <TextArea name="transcription" toName="page" perRegion="true" required="true" rows="2"/>
+</View>
+
