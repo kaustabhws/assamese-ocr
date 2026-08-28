@@ -1,0 +1,37 @@
+seed: 1337
+data:
+  dataset_path: data/processed/wikisource_assamese
+  synthetic_path: data/processed/synthetic_assamese
+  vocab_path: data/processed/mozhi_assamese/vocab.json
+  image_height: 48
+  max_image_width: 1024
+  min_image_width: 32
+  synthetic_weight: 0.10
+  hard_characters: "ষযৰৱবূুীিৎড়ঢ়"
+  hard_character_boost: 2.0
+  num_workers: 4
+model:
+  input_channels: 1
+  cnn_channels: 384
+  rnn_hidden: 256
+  rnn_layers: 2
+  dropout: 0.2
+training:
+  epochs: 12
+  batch_size: 64
+  learning_rate: 0.00005
+  weight_decay: 0.0001
+  grad_clip: 5.0
+  amp: true
+  patience: 4
+  log_every: 50
+  output_dir: artifacts/recognizer_finetuned
+evaluation:
+  decode: greedy
+  primary_metric: cer
+  max_cer: 0.03
+export:
+  opset: 18
+  dynamic_width: true
+  quantize_int8: true
+

@@ -26,12 +26,24 @@ def degrade_image(image: Image.Image, rng: random.Random) -> Image.Image:
         image = ImageEnhance.Brightness(image).enhance(rng.uniform(0.75, 1.2))
     if rng.random() < 0.3:
         image = image.filter(ImageFilter.GaussianBlur(radius=rng.uniform(0.1, 1.1)))
+    if rng.random() < 0.18:
+        # MinFilter expands dark ink, approximating photocopy bleed.
+        image = image.filter(ImageFilter.MinFilter(size=3))
+    elif rng.random() < 0.12:
+        # MaxFilter thins broken or faint strokes.
+        image = image.filter(ImageFilter.MaxFilter(size=3))
     if rng.random() < 0.25:
         array = np.asarray(image, dtype=np.float32)
         noise = np.random.default_rng(rng.randrange(2**32)).normal(
             0.0, rng.uniform(1.5, 8.0), size=array.shape
         )
         image = Image.fromarray(np.clip(array + noise, 0, 255).astype(np.uint8), mode="L")
+    if rng.random() < 0.16:
+        speckled = np.asarray(image, dtype=np.uint8).copy()
+        speckles = np.random.default_rng(rng.randrange(2**32)).random(speckled.shape)
+        speckled[speckles < rng.uniform(0.0002, 0.0015)] = 0
+        speckled[speckles > 1.0 - rng.uniform(0.0002, 0.001)] = 255
+        image = Image.fromarray(speckled, mode="L")
     if rng.random() < 0.2:
         buffer = io.BytesIO()
         image.save(buffer, format="JPEG", quality=rng.randint(35, 90))
@@ -118,4 +130,3 @@ class CTCCollator:
             "target_lengths": torch.tensor([len(item) for item in encoded], dtype=torch.long),
             "texts": labels,
         }
-

@@ -36,7 +36,8 @@ The script is shared, so a generic per-line Unicode heuristic cannot reliably di
 
 The balanced path uses the Apache-2.0 Docling Heron INT8 ONNX detector. It accepts a uint8 RGB tensor at 640x640 and returns 17 semantic region classes. The mobile training notebook prepares an SSDLite-MobileNetV3 student for DocLayNet; it must be benchmarked before replacing Heron.
 
+Inference applies deterministic post-processing before export: near-identical semantic boxes are suppressed, lines inside tables/forms/key-value regions stay with their structural container, empty duplicate text regions are discarded, low-Assamese QR noise inside picture regions is suppressed, and reading order uses the actual line envelope rather than an oversized detector box. Full-width separators, page-top headers, table rows, and multi-column regions are then ordered separately.
+
 ## Output contract
 
 Every page has pixel dimensions and ordered regions. Every region has a semantic label, bounding box, confidence, and ordered lines. Every text line has a polygon, UTF-8 text, recognition confidence, and optional character spans. Coordinates remain in original page pixels, which permits faithful visual overlays and later PDF reconstruction.
-

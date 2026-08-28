@@ -7,7 +7,11 @@ from typing import Protocol
 import numpy as np
 from PIL import Image
 
-from axomiya_ocr.layout.reading_order import resolve_reading_order
+from axomiya_ocr.layout.reading_order import (
+    assign_lines_to_regions,
+    deduplicate_regions,
+    resolve_reading_order,
+)
 from axomiya_ocr.layout.schema import BoundingBox, Document, Page, Region, TextLine
 
 from .text_detector import RapidTextDetector, rectify_crop
@@ -50,15 +54,6 @@ def _polygon_bbox(polygon: list[list[float]]) -> BoundingBox:
     )
 
 
-def _contains_center(region: Region, line_box: BoundingBox) -> bool:
-    center_x = (line_box.x0 + line_box.x1) / 2
-    center_y = (line_box.y0 + line_box.y1) / 2
-    return (
-        region.bbox.x0 <= center_x <= region.bbox.x1
-        and region.bbox.y0 <= center_y <= region.bbox.y1
-    )
-
-
 class DocumentOCR:
     def __init__(
         self,
@@ -75,8 +70,9 @@ class DocumentOCR:
         page_images: list[Image.Image] = []
         for page_number, image in enumerate(rasterize_document(source_path, dpi=dpi), start=1):
             page_images.append(image)
-            regions = self.layout_detector.predict(image)
+            regions = deduplicate_regions(self.layout_detector.predict(image))
             polygons = self.text_detector.predict(image)
+            lines: list[TextLine] = []
             for line_index, polygon in enumerate(polygons):
                 line_box = _polygon_bbox(polygon)
                 crop = rectify_crop(image, polygon)
@@ -88,21 +84,9 @@ class DocumentOCR:
                     text=text,
                     confidence=confidence,
                 )
-                containing = [region for region in regions if _contains_center(region, line_box)]
-                if containing:
-                    region = min(containing, key=lambda item: item.bbox.width * item.bbox.height)
-                    region.lines.append(line)
-                else:
-                    regions.append(
-                        Region(
-                            id=f"region-fallback-{line_index:04d}",
-                            label="text",
-                            bbox=line_box,
-                            confidence=0.0,
-                            lines=[line],
-                        )
-                    )
-            regions = resolve_reading_order(regions, image.width)
+                lines.append(line)
+            regions = assign_lines_to_regions(regions, lines)
+            regions = resolve_reading_order(regions, image.width, page_height=image.height)
             pages.append(Page(page_number, image.width, image.height, regions))
         document = Document(source=str(source_path), pages=pages)
         return document, page_images

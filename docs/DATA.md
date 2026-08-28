@@ -23,6 +23,39 @@ The prepared corpus pins revision `b04c8d1ceb2f5cd4588862100d08de323dccfbaa` and
 
 Synthetic data is useful for fonts, long lines, punctuation, and degradation. It is not a replacement for a manually verified real-page test set.
 
+### Validated Assamese Wikisource scans
+
+`scripts/prepare_wikisource.py` creates real scanned-line training data from the Assamese Wikisource `Page:` namespace. It accepts only pages at ProofreadPage quality level 4 (validated), records the exact page revision, verifies that each source scan has Public Domain or Creative Commons metadata, and records file-level attribution. Assamese Wikisource transcriptions are CC BY-SA 4.0.
+
+By default it selects PDF-backed books, downloads each source file once, and renders selected pages locally at 200 DPI. This avoids low-resolution thumbnails and Wikimedia request throttling. `--include-djvu` broadens typeface coverage but is slower because DjVu pages are fetched individually. API responses and source files are cached under `data/raw/wikisource_cache`, so interrupted preparation can be rerun safely.
+
+Whole source books are assigned to train, validation, or test before pages are selected, preventing crops from one book leaking across splits. The current recognizer is used only to align detected image lines to the human transcription. The saved label is the human transcription, never the bootstrap prediction. Lines with weak alignment, unknown vocabulary characters, impossible CTC lengths, excessive non-Assamese text, or duplicate crop pixels are rejected.
+
+This is intentionally described as **silver line data**: the page transcription is human validated, but line segmentation and alignment are automatic. Use it to fine-tune the recognizer; retain a separately hand-reviewed page benchmark for final accuracy claims. Dataset files are downloaded/generated locally and are not committed.
+
+Recommended preparation:
+
+```bash
+python scripts/prepare_wikisource.py \
+  --recognizer artifacts/recognizer/assamese_recognizer.int8.onnx \
+  --vocab data/processed/mozhi_assamese/vocab.json \
+  --train-documents 12 \
+  --validation-documents 2 \
+  --test-documents 2 \
+  --pages-per-document 30 \
+  --output data/processed/wikisource_assamese
+```
+
+Review `data/processed/wikisource_assamese/audit.json`, `page_audit.jsonl`, and `attribution.json` before training. Do not use `--allow-unknown-license` unless you have independently established the missing scan rights.
+
+Record the current model's baseline on the accepted aligned lines before fine-tuning:
+
+```bash
+python scripts/evaluate_bootstrap.py \
+  --dataset data/processed/wikisource_assamese \
+  --output artifacts/wikisource_bootstrap_metrics.json
+```
+
 ## Preparation rules
 
 1. Preserve the official Mozhi train/validation/test assignment; remove exact pixel duplicates from validation/test rather than moving examples between splits.
@@ -32,6 +65,7 @@ Synthetic data is useful for fonts, long lines, punctuation, and degradation. It
 5. Hash source image bytes and normalized text to find exact cross-split leakage.
 6. For user page data, split by book/document before creating crops. Pages from one book must not leak across train and test.
 7. Keep the official test split untouched. Tune thresholds only on validation.
+8. Never train on the 20 SEBA pages used for the current real-page check; they remain a regression benchmark.
 
 ## Required real-page benchmark
 

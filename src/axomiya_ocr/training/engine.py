@@ -39,13 +39,34 @@ def _device() -> torch.device:
     return torch.device("cpu")
 
 
-def _mixed_sampler(real_size: int, synthetic_size: int, synthetic_weight: float) -> WeightedRandomSampler:
+def _source_weights(
+    texts: list[str], total_mass: float, hard_characters: set[str], hard_boost: float
+) -> list[float]:
+    factors = [hard_boost if hard_characters.intersection(text) else 1.0 for text in texts]
+    denominator = max(1.0, sum(factors))
+    return [total_mass * factor / denominator for factor in factors]
+
+
+def _mixed_sampler(
+    real_texts: list[str],
+    synthetic_texts: list[str],
+    synthetic_weight: float,
+    hard_characters: set[str] | None = None,
+    hard_boost: float = 1.0,
+) -> WeightedRandomSampler:
     if not 0.0 <= synthetic_weight < 1.0:
         raise ValueError("synthetic_weight must be in [0, 1)")
-    real_weight = (1.0 - synthetic_weight) / max(1, real_size)
-    synth_weight = synthetic_weight / max(1, synthetic_size)
-    weights = [real_weight] * real_size + [synth_weight] * synthetic_size
-    return WeightedRandomSampler(weights, num_samples=real_size, replacement=True)
+    if hard_boost < 1.0:
+        raise ValueError("hard_character_boost must be at least 1.0")
+    hard_characters = hard_characters or set()
+    weights = _source_weights(
+        real_texts, 1.0 - synthetic_weight, hard_characters, hard_boost
+    )
+    if synthetic_texts:
+        weights.extend(
+            _source_weights(synthetic_texts, synthetic_weight, hard_characters, hard_boost)
+        )
+    return WeightedRandomSampler(weights, num_samples=len(real_texts), replacement=True)
 
 
 def build_loaders(config: dict[str, Any], vocab: Vocabulary) -> tuple[DataLoader, DataLoader]:
@@ -55,11 +76,21 @@ def build_loaders(config: dict[str, Any], vocab: Vocabulary) -> tuple[DataLoader
     synthetic_path = Path(data_config["synthetic_path"])
     sampler = None
     train_dataset: Any = real_train
+    hard_characters = set(str(data_config.get("hard_characters", "")))
+    hard_boost = float(data_config.get("hard_character_boost", 1.0))
     if synthetic_path.exists() and data_config.get("synthetic_weight", 0) > 0:
         synthetic = HFDiskOCRDataset(synthetic_path, "train")
         train_dataset = ConcatDataset([real_train, synthetic])
         sampler = _mixed_sampler(
-            len(real_train), len(synthetic), float(data_config["synthetic_weight"])
+            list(real_train.texts),
+            list(synthetic.texts),
+            float(data_config["synthetic_weight"]),
+            hard_characters,
+            hard_boost,
+        )
+    elif hard_characters and hard_boost > 1.0:
+        sampler = _mixed_sampler(
+            list(real_train.texts), [], 0.0, hard_characters, hard_boost
         )
 
     image_height = int(data_config["image_height"])
@@ -195,7 +226,13 @@ def _save_checkpoint(
     temporary.replace(path)
 
 
-def train(config: dict[str, Any], resume_from: str | Path | None = None) -> dict[str, Any]:
+def train(
+    config: dict[str, Any],
+    resume_from: str | Path | None = None,
+    init_from: str | Path | None = None,
+) -> dict[str, Any]:
+    if resume_from and init_from:
+        raise ValueError("Use either resume_from or init_from, not both")
     seed_everything(int(config["seed"]))
     device = _device()
     dataset_path = Path(config["data"]["dataset_path"])
@@ -231,6 +268,20 @@ def train(config: dict[str, Any], resume_from: str | Path | None = None) -> dict
     start_epoch = 1
 
     resume_path = Path(resume_from) if resume_from else None
+    init_path = Path(init_from) if init_from else None
+    if init_path:
+        checkpoint = torch.load(init_path, map_location=device, weights_only=False)
+        if checkpoint["vocab"].get("sha256") != vocab.sha256:
+            raise ValueError("Cannot initialize with a different vocabulary")
+        expected_model_config = asdict(model.config)
+        if checkpoint.get("model_config") != expected_model_config:
+            raise ValueError("Cannot initialize with a different model architecture")
+        model.load_state_dict(checkpoint["model_state_dict"])
+        config["initialized_from"] = {
+            "path": str(init_path),
+            "checkpoint_epoch": checkpoint.get("epoch"),
+            "checkpoint_best_cer": checkpoint.get("best_cer"),
+        }
     if resume_path:
         checkpoint = torch.load(resume_path, map_location=device, weights_only=False)
         if checkpoint["vocab"].get("sha256") != vocab.sha256:
@@ -333,6 +384,7 @@ def train(config: dict[str, Any], resume_from: str | Path | None = None) -> dict
         "best_cer": best_cer,
         "epochs_completed": len(history),
         "checkpoint": str(output_dir / "best.pt"),
+        "initialized_from": str(init_path) if init_path else None,
     }
 
 

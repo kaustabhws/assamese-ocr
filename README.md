@@ -71,6 +71,8 @@ See [docs/TRAINING.md](docs/TRAINING.md) and [docs/DATA.md](docs/DATA.md) for th
 
 The measured baseline is recorded in [docs/BASELINE.md](docs/BASELINE.md). Official Tesseract `asm-fast` reaches 23.17% CER and 54.37% exact word accuracy on the complete cleaned Mozhi test set, giving the trained model a concrete comparison target.
 
+For real-scan improvement, the repository can build a document-disjoint Assamese Wikisource dataset from human-validated page transcriptions and warm-start the current checkpoint with `configs/recognizer_finetune.yaml`. See [docs/DATA.md](docs/DATA.md) and [docs/TRAINING.md](docs/TRAINING.md). The SEBA textbook pages used for regression testing are deliberately excluded from training.
+
 ## Data and model licensing
 
 Project code is Apache-2.0. External datasets, fonts, and model weights retain their own licenses. The Mozhi mirror does not state a self-contained redistribution license and points users to the original CVIT source; verify its terms before redistribution or commercial use. The downloader records source revisions so experiments remain auditable.

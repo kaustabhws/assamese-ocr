@@ -42,6 +42,45 @@ python scripts/train_recognizer.py --config configs/recognizer.yaml \
   --resume artifacts/recognizer/last.pt
 ```
 
+## Fine-tune the existing recognizer on real scanned lines
+
+Prepare the validated Wikisource data first using the command in `docs/DATA.md`. Then warm-start from the existing best checkpoint:
+
+```bash
+python scripts/train_recognizer.py \
+  --config configs/recognizer_finetune.yaml \
+  --init-from artifacts/recognizer/best.pt
+```
+
+`--init-from` loads model weights only and starts a new low-learning-rate run in `artifacts/recognizer_finetuned`. This is different from `--resume`, which restores the optimizer, scheduler, epoch and random state after an interrupted run. Never use both options together.
+
+The fine-tune profile uses 1024-pixel line inputs, 10% synthetic replay to reduce forgetting, stronger real-scan augmentation, and 2x sampling for labels containing the character families implicated by the SEBA review. It keeps the exact original vocabulary and architecture, so the existing checkpoint remains compatible.
+
+After training, evaluate both the new real-scan split and the untouched Mozhi test split:
+
+```bash
+python scripts/evaluate_recognizer.py \
+  --checkpoint artifacts/recognizer_finetuned/best.pt \
+  --dataset data/processed/wikisource_assamese \
+  --split test \
+  --output artifacts/recognizer_finetuned/wikisource_test_metrics.json
+
+python scripts/evaluate_recognizer.py \
+  --checkpoint artifacts/recognizer_finetuned/best.pt \
+  --dataset data/processed/mozhi_assamese \
+  --split test \
+  --output artifacts/recognizer_finetuned/mozhi_test_metrics.json
+```
+
+Export only after both evaluations. Re-run the frozen SEBA 20-page regression set and compare it visually before replacing the old model.
+
+```bash
+python scripts/export_recognizer.py \
+  --checkpoint artifacts/recognizer_finetuned/best.pt \
+  --output artifacts/recognizer_finetuned/assamese_recognizer.onnx \
+  --quantize
+```
+
 ## Training decisions
 
 - Primary checkpoint metric: validation CER.

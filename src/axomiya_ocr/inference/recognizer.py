@@ -21,9 +21,11 @@ class ONNXRecognizer:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         self.vocab = Vocabulary(tuple(metadata["vocab"]["characters"]))
         self.height = int(metadata["input"]["height"])
+        self.max_width = int(metadata["input"].get("max_width", 768))
         self.session = ort.InferenceSession(str(model_path), providers=["CPUExecutionProvider"])
 
-    def predict(self, image: Image.Image, max_width: int = 768) -> tuple[str, float]:
+    def predict(self, image: Image.Image, max_width: int | None = None) -> tuple[str, float]:
+        max_width = max_width or self.max_width
         array, width = prepare_image(
             image,
             height=self.height,
