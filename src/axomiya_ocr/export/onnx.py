@@ -43,6 +43,7 @@ def export_recognizer(
             "layout": "NCHW",
             "height": int(checkpoint["training_config"]["data"]["image_height"]),
             "max_width": int(checkpoint["training_config"]["data"]["max_image_width"]),
+            "pad_to_max_width": True,
         },
         "output": {"name": "logits", "layout": "NTC", "blank_id": 0},
         "checkpoint_epoch": checkpoint.get("epoch"),
