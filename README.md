@@ -15,7 +15,7 @@ Assamese and Bengali share most Unicode code points and much of the Eastern Naga
 
 ## Current status
 
-This repository contains the complete data, training, evaluation, export, and inference code. Model checkpoints are intentionally not committed: run the GPU notebooks to produce them. Until a checkpoint is trained and evaluated, accuracy and latency are targets—not claims.
+This repository contains the complete data, training, evaluation, export, and inference code. The ready-to-run INT8 release models are included in `dist/axomiya-ocr-0.2.0`; training checkpoints and generated datasets remain excluded.
 
 ## Architecture profiles
 
@@ -53,6 +53,34 @@ For the complete dataset, omit `--max-per-split`. Then open the notebooks in ord
 6. `notebooks/05_page_benchmark.ipynb`
 
 Each notebook can run on Colab/Kaggle or another CUDA machine after the repository and prepared data are available.
+
+## Run OCR on an image
+
+The repository includes the recognizer, page-layout model, and text-line detector. A GPU is not required for inference.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install --upgrade pip
+.\.venv\Scripts\python -m pip install -e ".[inference]"
+.\.venv\Scripts\python ocr.py "C:\path\to\assamese-page.jpg"
+```
+
+Linux/macOS:
+
+```bash
+python -m venv .venv
+./.venv/bin/python -m pip install --upgrade pip
+./.venv/bin/python -m pip install -e ".[inference]"
+./.venv/bin/python ocr.py /path/to/assamese-page.jpg
+```
+
+By default the results are written to `ocr_output/<input-name>/`:
+
+- `text.txt`: plain UTF-8 Assamese text in reading order
+- `document.json`: text, confidence, coordinates, regions, and reading order
+- `document.html`: the original page with a selectable OCR text overlay
+
+Choose another output directory with `--output results/my-page`. PDF input is also supported. To additionally create a searchable PDF, pass an Assamese font with `--font path/to/font.ttf`.
 
 ## Release gates
 

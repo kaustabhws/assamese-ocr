@@ -11,6 +11,28 @@ from PIL import Image
 from axomiya_ocr.layout.schema import Document
 
 
+def document_text(document: Document) -> str:
+    """Render recognized lines as UTF-8 text in resolved reading order."""
+    page_texts: list[str] = []
+    for page in document.pages:
+        region_texts: list[str] = []
+        for region in sorted(page.regions, key=lambda item: item.order):
+            lines = [
+                line.text.strip()
+                for line in sorted(region.lines, key=lambda item: item.order)
+                if line.text.strip()
+            ]
+            if lines:
+                region_texts.append("\n".join(lines))
+        page_texts.append("\n\n".join(region_texts))
+    text = "\n\n\f\n\n".join(page_texts).rstrip()
+    return text + "\n" if text else ""
+
+
+def save_text(document: Document, output_path: str | Path) -> None:
+    Path(output_path).write_text(document_text(document), encoding="utf-8")
+
+
 def save_json(document: Document, output_path: str | Path) -> None:
     Path(output_path).write_text(
         json.dumps(document.to_dict(), ensure_ascii=False, indent=2) + "\n",

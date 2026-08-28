@@ -10,7 +10,9 @@ __pycache__/
 data/raw/*
 data/processed/*
 artifacts/*
-dist/
+dist/*
+!dist/axomiya-ocr-0.2.0/
+!dist/axomiya-ocr-0.2.0/**
 assets/fonts/*.ttf
 assets/fonts/*.otf
 !data/raw/.gitkeep

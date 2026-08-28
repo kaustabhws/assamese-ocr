@@ -1,0 +1,2 @@
+dist/**/*.onnx binary
+dist/**/*.json text eol=lf

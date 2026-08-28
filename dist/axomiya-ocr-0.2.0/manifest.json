@@ -1,0 +1,33 @@
+{
+  "bundle_format": 1,
+  "language": "as",
+  "normalization": "NFC",
+  "rapidocr_version": "3.9.2",
+  "files": {
+    "recognizer": {
+      "filename": "assamese_recognizer.int8.onnx",
+      "bytes": 3683652,
+      "sha256": "b3aece0b255083dc51bef25831ff0f839a58b527b384b47288b7977bbc96564e"
+    },
+    "recognizer_metadata": {
+      "filename": "assamese_recognizer.int8.json",
+      "bytes": 2943,
+      "sha256": "621369f6e7a12076d6e63b6ccd6da88f4e11308901c8eb11691676fcd9d287e0"
+    },
+    "layout": {
+      "filename": "layout_heron.int8.onnx",
+      "bytes": 69498410,
+      "sha256": "087ed4fa1ae3ee03003d8f02f8e5c4d1497cb45e4122e62dfa531acbbe841364"
+    },
+    "text_detector": {
+      "filename": "text_detector.onnx",
+      "bytes": 9929594,
+      "sha256": "090f04abcd9d9a7498bc4ebf677e4cb9bdce1fe4197ddb7e529f1ef44e1ff94f"
+    }
+  },
+  "licenses": {
+    "project": "Apache-2.0",
+    "layout": "Apache-2.0 (inherited from Docling Heron)",
+    "text_detector": "Apache-2.0 (RapidOCR/PaddleOCR)"
+  }
+}

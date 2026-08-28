@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -9,10 +10,17 @@ from PIL import Image
 class RapidTextDetector:
     """Use RapidOCR's mobile DBNet only; its multilingual recognizer is disabled."""
 
-    def __init__(self) -> None:
+    def __init__(self, model_path: str | Path | None = None) -> None:
         from rapidocr import RapidOCR
 
-        self.engine = RapidOCR()
+        params: dict[str, Any] = {
+            "Global.use_det": True,
+            "Global.use_cls": False,
+            "Global.use_rec": False,
+        }
+        if model_path is not None:
+            params["Det.model_path"] = str(Path(model_path).resolve())
+        self.engine = RapidOCR(params=params)
 
     def predict(self, image: Image.Image) -> list[list[list[float]]]:
         result = self.engine(np.asarray(image.convert("RGB")), use_det=True, use_cls=False, use_rec=False)
@@ -52,4 +60,3 @@ def rectify_crop(image: Image.Image, polygon: list[list[float]]) -> Image.Image:
     if height > width * 1.5:
         crop = np.rot90(crop)
     return Image.fromarray(crop)
-

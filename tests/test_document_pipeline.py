@@ -2,7 +2,7 @@ import json
 
 from PIL import Image
 
-from axomiya_ocr.export.document import save_html, save_json
+from axomiya_ocr.export.document import document_text, save_html, save_json, save_text
 from axomiya_ocr.inference.document import DocumentOCR
 from axomiya_ocr.layout.schema import BoundingBox, Region
 
@@ -32,8 +32,11 @@ def test_document_pipeline_and_exports(tmp_path) -> None:
 
     json_path = tmp_path / "document.json"
     html_path = tmp_path / "document.html"
+    text_path = tmp_path / "text.txt"
     save_json(document, json_path)
     save_html(document, images, html_path)
+    save_text(document, text_path)
     assert json.loads(json_path.read_text(encoding="utf-8"))["language"] == "as"
     assert "অসমীয়া" in html_path.read_text(encoding="utf-8")
-
+    assert document_text(document) == "অসমীয়া\n"
+    assert text_path.read_text(encoding="utf-8") == "অসমীয়া\n"
