@@ -89,7 +89,7 @@ def assign_lines_to_regions(regions: Sequence[Region], lines: Sequence[TextLine]
                 confidence=0.0,
             )
             output.append(selected)
-        if selected.label == "picture" and assamese_script_ratio(line.text) < 0.6:
+        if selected.label == "picture" and assamese_script_ratio(line.text) < 0.8:
             continue
         selected.lines.append(line)
     return [region for region in output if region.lines or region.label in _KEEP_EMPTY_LABELS]

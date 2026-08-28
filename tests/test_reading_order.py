@@ -80,3 +80,10 @@ def test_latin_qr_noise_inside_picture_is_not_exported_as_text() -> None:
     assert assigned == [picture]
     assert picture.lines == []
 
+
+def test_mixed_qr_noise_with_small_assamese_fragment_is_not_exported() -> None:
+    picture = Region("qr", "picture", BoundingBox(0, 0, 200, 200), 0.9)
+    assigned = assign_lines_to_regions([picture], [line("C 3! 2% প্ৰ", (20, 20, 180, 50))])
+    assert assigned == [picture]
+    assert picture.lines == []
+
